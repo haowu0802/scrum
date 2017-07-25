@@ -1,4 +1,6 @@
+from django.conf import settings  # for assign task to user
 from django.db import models
+from django.utils.translation import ugettext_lazy as _  # lazy text getter
 
 
 class Sprint(models.Model):
@@ -10,3 +12,35 @@ class Sprint(models.Model):
 
     def __str__(self):
         return self.name or _('Sprint ending %s') % self.end  # to string
+
+
+class Task(models.Model):
+    """Unit of work to be done for the sprint."""
+
+    # status code for task
+    STATUS_TODO = 1
+    STATUS_IN_PROGRESS = 2
+    STATUS_TESTING = 3
+    STATUS_DONE = 4
+
+    # status text
+    STATUS_CHOICES = (
+        (STATUS_TODO, _('Not Started')),
+        (STATUS_IN_PROGRESS, _('In Progress')),
+        (STATUS_TESTING, _('Testing')),
+        (STATUS_DONE, _('Done')),
+    )
+
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default='')
+    sprint = models.ForeignKey(Sprint, blank=True, null=True)  # a Task belongs to a Sprint
+    status = models.SmallIntegerField(choices=STATUS_CHOICES, default=STATUS_TODO)  # from status code/text
+    order = models.SmallIntegerField(default=0)  # for sorting
+    assigned = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)  # only auth user can be assigned task
+    started = models.DateField(blank=True, null=True)
+    due = models.DateField(blank=True, null=True)
+    completed = models.DateField(blank=True, null=True)  # dates for start, due, completion
+
+    def __str__(self):
+        return self.name  # to string
+
