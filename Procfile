@@ -1,1 +1,1 @@
-web: gunicorn board
+web: gunicorn scrum.wsgi
