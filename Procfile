@@ -1,1 +1,1 @@
-web: gunicorn scrum
+web: gunicorn board
