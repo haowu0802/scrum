@@ -15,7 +15,7 @@ class SprintSerializer(serializers.ModelSerializer):
 class TaskSerializer(serializers.ModelSerializer):
 
     # get text for status code, to show text instead of code
-    status_display = serializers.SerializerMethodField('get_status_display')
+    status_display = serializers.SerializerMethodField()
 
     assigned = serializers.SlugRelatedField(  # replace assigned with user name instead of user key id
         slug_field=User.USERNAME_FIELD,
