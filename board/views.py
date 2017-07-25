@@ -2,8 +2,11 @@ from django.shortcuts import render
 
 from rest_framework import authentication, permissions, viewsets  # viewSets related libs for creating resource lists
 
-from .models import Sprint  # the Sprint model
-from .serializers import SprintSerializer  # the serializer
+from django.contrib.auth import get_user_model  # for a uniformed user model
+from .models import Sprint, Task  # the Sprint model
+from .serializers import SprintSerializer, TaskSerializer, UserSerializer  # the serializer
+
+User = get_user_model()  # the uniformed user model
 
 
 class DefaultsMixin(object):
@@ -26,3 +29,15 @@ class SprintViewSet(viewsets.ModelViewSet):
     serializer_class = SprintSerializer  # appoint it's own serializer
 
 
+class TaskViewSet(DefaultsMixin, viewsets.ModelViewSet):
+    """API endpoint for listing and creating tasks."""
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+
+
+class UserViewSet(DefaultsMixin, viewsets.ReadOnlyModelViewSet):  # disallow modification to user in the API endpoints
+    """API endpoint for listing users."""
+    lookup_field = User.USERNAME_FIELD  # search user by username instead of key id
+    lookup_url_kwarg = User.USERNAME_FIELD  # for consistency
+    queryset = User.objects.order_by(User.USERNAME_FIELD)
+    serializer_class = UserSerializer
