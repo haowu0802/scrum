@@ -21,7 +21,7 @@ class SprintSerializer(serializers.ModelSerializer):
         return {
             'self': reverse('sprint-detail',  # link to detail page of itself
                             kwargs={'pk': obj.pk},
-                            request=request),
+                            request=request),  # needed for creating the full url
         }
 
 
@@ -48,11 +48,22 @@ class TaskSerializer(serializers.ModelSerializer):
     def get_links(self, obj):
         """produce links to related resource"""
         request = self.context['request']
-        return {
+        links = {
             'self': reverse('task-detail',  # link to detail page of itself
                             kwargs={'pk': obj.pk},
-                            request=request),
+                            request=request),  # needed for creating the full url
+            'sprint': None,  # parent sprint
+            'assigned': None  # user assigned
         }
+        if obj.sprint_id:
+            links['sprint'] = reverse('sprint-detail',  # link to parent sprint
+                                      kwargs={'pk': obj.sprint_id},
+                                      request=request)
+        if obj.assigned:
+            links['assigned'] = reverse('user-detail',  # and assigned user
+                                        kwargs={User.USERNAME_FIELD: obj.assigned},
+                                        request=request)
+        return links
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -73,5 +84,5 @@ class UserSerializer(serializers.ModelSerializer):
         return {
             'self': reverse('user-detail',  # link to detail page of itself
                             kwargs={User.USERNAME_FIELD: username},
-                            request=request),
+                            request=request),  # needed for creating the full url
         }
