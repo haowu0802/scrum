@@ -19,7 +19,9 @@ class TaskSerializer(serializers.ModelSerializer):
 
     assigned = serializers.SlugRelatedField(  # replace assigned with user name instead of user key id
         slug_field=User.USERNAME_FIELD,
-        required=False)
+        required=False,
+        read_only=True
+    )
 
     class Meta:
         model = Task
