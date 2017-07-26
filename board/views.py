@@ -46,7 +46,7 @@ class TaskViewSet(DefaultsMixin, viewsets.ModelViewSet):
     ordering_fields = ('name', 'order', 'started', 'due', 'completed', )  # allow order by these fields
 
 
-class UserViewSet(DefaultsMixin, viewsets.ReadOnlyModelViewSet):  # disallow modification to user in the API endpoints
+class UserViewSet(DefaultsMixin, viewsets.ModelViewSet):  # allow modification to user in the API endpoints
     """API endpoint for listing users."""
     lookup_field = User.USERNAME_FIELD  # search user by username instead of key id
     lookup_url_kwarg = User.USERNAME_FIELD  # for consistency

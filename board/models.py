@@ -1,6 +1,25 @@
 from django.conf import settings  # for assign task to user
-from django.db import models
 from django.utils.translation import ugettext_lazy as _  # lazy text getter
+
+from django.db import models
+from django.contrib.auth.models import User  # for customizing user model
+from django.db.models.signals import post_save  # for Profile link
+from django.dispatch import receiver  # for decorating User model functions
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()
 
 
 class Sprint(models.Model):
