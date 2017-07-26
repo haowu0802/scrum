@@ -1,5 +1,8 @@
 from rest_framework import serializers  # serializers lib from django-rest
+
 from rest_framework.reverse import reverse  # for producing links for resource
+from datetime import date  # for date validation
+from django.utils.translation import ugettext_lazy as _  # make error message translatable
 
 from .models import Sprint, Task, Profile  # the board models
 from django.contrib.auth import get_user_model  # to get a clean user model
@@ -22,7 +25,20 @@ class SprintSerializer(serializers.ModelSerializer):
             'self': reverse('sprint-detail',  # link to detail page of itself
                             kwargs={'pk': obj.pk},
                             request=request),  # needed for creating the full url
+            'tasks': reverse('task-list',  # get tasks belongs to this Sprint
+                             request=request) + '?sprint={}'.format(obj.pk),
         }
+
+    def validate_end(self, field):
+        """make sure end date is not in the past,
+        setting an end date in the past for a Sprint make the Sprint unfinishable and invalid """
+        end_date = field
+        new = not self.instance  # when creating a new one
+        changed = self.instance and self.instance.end != end_date  # and changing the end field
+        if (new or changed) and (end_date < date.today()):
+            msg = _('End date cannot be in the past.')
+            raise serializers.ValidationError(msg)  # raise exception when making end date into the past
+        return field
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -65,6 +81,45 @@ class TaskSerializer(serializers.ModelSerializer):
                                         request=request)
         return links
 
+    def validate_sprint(self, data):
+        """make sure that:
+         1. a completed task cannot be changed to another sprint
+         2. an existing task cannot be changed to a past sprint
+         3. a new task cannot be added to a past sprint"""
+        sprint = data
+        if self.instance and self.instance.pk:
+            if sprint != self.instance.sprint:
+                if self.instance.status == Task.STATUS_DONE:
+                    msg = _('Cannot change the sprint of a completed task.')
+                    raise serializers.ValidationError(msg)
+                if sprint and sprint.end < date.today():
+                    msg = _('Cannot assign tasks to past sprints.')
+                    raise serializers.ValidationError(msg)
+        else:
+            if sprint and sprint.end < date.today():
+                msg = _('Cannot add tasks to past sprints.')
+                raise serializers.ValidationError(msg)
+        return data
+
+    def validate(self, attrs):
+        """make sure that:
+        1. a task in backlog have Not Started status
+        2. Started date cannot be set for not started tasks.
+        3. Completed date cannot be set for uncompleted tasks."""
+        sprint = attrs.get('sprint')
+        status = int(attrs.get('status'))
+        started = attrs.get('started')
+        completed = attrs.get('completed')
+        if not sprint and status != Task.STATUS_TODO:
+            msg = _('Backlog tasks must have "Not Started" status.')
+            raise serializers.ValidationError(msg)
+        if started and status == Task.STATUS_TODO:
+            msg = _('Started date cannot be set for not started tasks.')
+            raise serializers.ValidationError(msg)
+        if completed and status != Task.STATUS_DONE:
+            msg = _('Completed date cannot be set for uncompleted tasks.')
+            raise serializers.ValidationError(msg)
+        return attrs
 
 class UserSerializer(serializers.ModelSerializer):
 
@@ -102,4 +157,6 @@ class UserSerializer(serializers.ModelSerializer):
             'self': reverse('user-detail',  # link to detail page of itself
                             kwargs={User.USERNAME_FIELD: username},
                             request=request),  # needed for creating the full url
+            'tasks': '{}?assigned={}'.format(  # get tasks assigned to this user
+                reverse('task-list', request=request), username)
         }
