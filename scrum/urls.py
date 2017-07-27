@@ -19,8 +19,11 @@ from rest_framework.authtoken.views import obtain_auth_token
 
 from board.urls import router  # django-rest routing
 
+from django.views.generic import TemplateView  # generic page view
+
 urlpatterns = [
-    url(r'^api/token/', obtain_auth_token, name='api-token'),
+    url(r'^api/token/', obtain_auth_token, name='api-token'),  # an API token getter
     url(r'^api/', include(router.urls)),  # django rest routing, API end points view sets
-    url(r'^admin/', admin.site.urls),
+    url(r'^$', TemplateView.as_view(template_name='board/index.html')),  # for the single page template
+    url(r'^admin/', admin.site.urls),  # just for debugging
 ]
