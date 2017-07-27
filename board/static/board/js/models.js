@@ -80,4 +80,60 @@
   /* apply user Session to application scope */
   app.session = new Session();
 
+  /* define a base model for Sprint, Task, User */
+  let BaseModel = Backbone.Model.extend({
+    /* use urls from links property of the models to build urls */
+    url: function () {
+      let links = this.get('links'),
+        url = links && links.self;
+      /* for cases that no links returned, use backbone default url */
+      if (!url) {
+        url = Backbone.Model.prototype.url.call(this);
+      }
+      return url;
+    }
+  });
+
+  /* models for each of the backend models */
+  app.models.Sprint = BaseModel.extend({});
+  app.models.Task = BaseModel.extend({});
+  app.models.User = BaseModel.extend({
+    idAttributemodel: 'username' /* user referred by username instead of id */
+  });
+
+  /* customized pagination */
+  let BaseCollection = Backbone.Collection.extend({
+    /* overrides the default pagination of backbone with response */
+    parse: function (response) {
+      this._next = response.next;
+      this._previous = response.previous;
+      this._count = response.count;
+      return response.results || [];
+    }
+  });
+
+  /* fetch api root and store in collection ready so other component will wait until api root is loaded */
+  app.collections.ready = $.getJSON(app.apiRoot);
+
+  /* parse the response */
+  app.collections.ready.done(function (data) {
+    /* collection mapping for model and url */
+    app.collections.Sprints = BaseCollection.extend({ /* use customized base collection */
+      model: app.models.Sprint,
+      url: data.sprints
+    });
+    /* shared instance as app.model */
+    app.sprints = new app.collections.Sprints();
+    app.collections.Tasks = BaseCollection.extend({ /* use customized base collection */
+      model: app.models.Task,
+      url: data.tasks
+    });
+    app.tasks = new app.collections.Tasks();
+    app.collections.Users = BaseCollection.extend({ /* use customized base collection */
+      model: app.models.User,
+      url: data.users
+    });
+    app.users = new app.collections.Users();
+  });
+
 })(jQuery, Backbone, _, app); /* self-invoking js closure that uses jQ+Backbone+_+app.js */

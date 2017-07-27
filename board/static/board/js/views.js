@@ -1,5 +1,8 @@
 (function ($, Backbone, _, app) {
 
+  /* generic views
+  ===============*/
+
   /* a generic template view, boilerplate code */
   let TemplateView = Backbone.View.extend({
     templateName: '',
@@ -15,29 +18,6 @@
       return {};
     }
   });
-
-  /* the home page view */
-  let HomepageView = TemplateView.extend({
-    templateName: '#home-template',/* the _ template to render */
-  });
-
-  /* header view */
-  let HeaderView = TemplateView.extend({ /* use generic template */
-    tagName: 'header',  /* target element that the template renders into */
-    templateName: '#header-template',
-    events: {
-      'click a.logout': 'logout' /* a logout event callback is bind to logout */
-    },
-    getContext: function () {
-      return {authenticated: app.session.authenticated()}; /* auth value passed to context */
-    },
-    logout: function (event) { /* logout and redirect to home */
-      event.preventDefault();
-      app.session.delete();
-      window.location = '/';
-    }
-  });
-
 
   /* generic form view */
   let FormView = TemplateView.extend({
@@ -87,8 +67,16 @@
       }
       this.trigger('done');
       this.remove();
+    },
+    /* failure callback for models */
+    modelFailure: function (model, xhr, options) {
+      let errors = xhr.responseJSON;
+      this.showErrors(errors);
     }
   });
+
+  /* form views
+  ===============*/
 
   /* the login view, extending the generic form view */
   let LoginView = FormView.extend({
@@ -108,7 +96,101 @@
     }
   });
 
+  /* the view for creating new sprint, inherit generic form view */
+  let NewSprintView = FormView.extend({
+    templateName: '#new-sprint-template',
+    className: 'new-sprint',
+    /* in addition to the default submit, also provide a cancel function */
+    events: _.extend({
+      'click button.cancel': 'done',
+    }, FormView.prototype.events),
+    submit: function (event) {
+      let self = this,
+      attributes = {};
+      FormView.prototype.submit.apply(this, arguments);
+      attributes = this.serializeForm(this.form);
+      app.collections.ready.done(function () {
+        /* use model level create instead of manually call post */
+        app.sprints.create(attributes, {
+          wait: true,
+          success: $.proxy(self.success, self),
+          error: $.proxy(self.modelFailure, self)
+        });
+      });
+    },
+    /* redirect to detail route of sprint on success */
+    success: function (model) {
+      this.done();
+      window.location.hash = '#sprint/' + model.get('id');
+    }
+  });
 
+  /* template views
+  ===============*/
+
+  /* the home page view */
+  let HomepageView = TemplateView.extend({
+    /* the _ template to render */
+    templateName: '#home-template',
+    /* events on the page */
+    events: {
+      /* add sprint button renders form for creating sprint */
+      'click button.add': 'renderAddForm'
+    },
+    /* handles the click event on add button */
+    renderAddForm: function (event) {
+      /* a new view instance for NewSprintView created */
+      let view = new NewSprintView(),
+        link = $(event.currentTarget);
+      /* prevent default click event */
+      event.preventDefault();
+      /* put the view before the button */
+      link.before(view.el);
+      /* hide button */
+      link.hide();
+      /* show form */
+      view.render();
+      /* when done or cancel, show button again */
+      view.on('done', function () {
+        link.show();
+      });
+    },
+    /* render the sprints */
+    initialize: function (options) {
+      let self = this;
+      TemplateView.prototype.initialize.apply(this, arguments);
+      app.collections.ready.done(function () {
+        /* only sprints with end date of 7 days ago or greater */
+        let end = new Date();
+        end.setDate(end.getDate() - 7);
+        end = end.toISOString().replace(/T.*/g, '');
+        app.sprints.fetch({
+          data: {end_min: end},
+          success: $.proxy(self.render, self)
+        });
+      });
+    },
+    getContext: function () {
+      return {sprints: app.sprints || null}; /* get context from app collection */
+    }
+  });
+
+  /* header view */
+  let HeaderView = TemplateView.extend({ /* use generic template */
+    tagName: 'header',  /* target element that the template renders into */
+    templateName: '#header-template',
+    events: {
+      'click a.logout': 'logout' /* a logout event callback is bind to logout */
+    },
+    getContext: function () {
+      return {authenticated: app.session.authenticated()}; /* auth value passed to context */
+    },
+    logout: function (event) { /* logout and redirect to home */
+      event.preventDefault();
+      app.session.delete();
+      window.location = '/';
+    }
+  });
 
   /* add views to application */
   app.views.HomepageView = HomepageView;
