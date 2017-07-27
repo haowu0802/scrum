@@ -99,7 +99,7 @@
       FormView.prototype.submit.apply(this, arguments); /* the login form calls the submit of the inherited form view */
       data = this.serializeForm(this.form); /* the serializeForm helper retrieves the data auto */
       $.post(app.apiLogin, data)
-        .done( function () { $.proxy(this.loginSuccess, this); }  )
+        .done($.proxy(this.loginSuccess, this))
         .fail($.proxy(this.failure, this));
     },
     loginSuccess: function (data) {
