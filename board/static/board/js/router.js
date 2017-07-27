@@ -3,7 +3,8 @@
 
   let AppRouter = Backbone.Router.extend({
     routes: {
-      '': 'home' /* only one page is used for this single page application */
+      '': 'home', /* only one page is used for this single page application */
+      'sprint/:id': 'sprint' /* sprint detail routes, capture sprint id */
     },
     initialize: function (options) {
       this.contentElement = '#content'; /* where _ tpl will load on the page */
@@ -13,13 +14,20 @@
       this.header.render();
       Backbone.history.start();
     },
-    home: function () {
+    /* the routes */
+    home: function () { /* homepage route */
       let view = new app.views.HomepageView({el: this.contentElement});
+      this.render(view);
+    },
+    sprint: function (id) { /* sprint detail route */
+      let view = new app.views.SprintView({ /* render a SprintView */
+        el: this.contentElement,
+        sprintId: id
+      });
       this.render(view);
     },
     /* overwrites the default route */
     route: function (route, name, callback) {
-
       // Override default route to enforce login on every page
       let login;
       callback = callback || this[name];

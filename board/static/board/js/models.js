@@ -109,6 +109,25 @@
       this._previous = response.previous;
       this._count = response.count;
       return response.results || [];
+    },
+    /* use deferred obj to resolve model instance */
+    getOrFetch: function (id) {
+      let result = new $.Deferred(),
+        model = this.get(id); /* look for the model with id in client-side data collection, no api requests */
+      if (!model) { /* only fetch from api if model not found in client-side collection */
+        model = this.push({id: id});
+        model.fetch({
+          success: function (model, response, options) {
+            result.resolve(model);
+          },
+          error: function (model, response, options) {
+            result.reject(model, response);
+          }
+        });
+      } else {
+        result.resolve(model);
+      }
+      return result;
     }
   });
 

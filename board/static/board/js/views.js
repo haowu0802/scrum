@@ -192,10 +192,39 @@
     }
   });
 
+  /* sprint detail view, extended from base template view */
+  let SprintView = TemplateView.extend({
+    templateName: '#sprint-template',
+    initialize: function (options) {
+      let self = this;
+      TemplateView.prototype.initialize.apply(this, arguments);
+      /* retrieve detail from api by sprint id */
+      this.sprintId = options.sprintId;
+      this.sprint = null;
+      app.collections.ready.done(function () {
+        /* app.sprint.push will put a model into client-side collection with only the id */
+        /* replace original fetch with get or fetch */
+        app.sprints.getOrFetch(self.sprintId).done(function (sprint) {
+          self.sprint = sprint;
+          console.log(sprint)
+          self.render();
+        }).fail(function (sprint) { /* on fetch fails, error out */
+          self.sprint = sprint;
+          self.sprint.invalid = true;
+          self.render();
+        });
+      });
+    },
+    getContext: function () {
+      return {sprint: this.sprint};
+    }
+  });
+
   /* add views to application */
   app.views.HomepageView = HomepageView;
   app.views.HeaderView = HeaderView;
   app.views.LoginView = LoginView;
+  app.views.SprintView = SprintView;
 
 
 })(jQuery, Backbone, _, app);/* js closure that uses jQ+Backbone+_+app.js */
