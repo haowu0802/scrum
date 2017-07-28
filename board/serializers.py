@@ -121,15 +121,33 @@ class TaskSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(msg)
         return attrs
 
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ('first_name', 'last_name', 'address_first', 'address_second',
+                  'city', 'state', 'zip_code', 'country')
+
+
 class UserSerializer(serializers.ModelSerializer):
 
     # function from user model, an interface for user model and custom user inherited auth.models
     full_name = serializers.CharField(source='get_full_name', read_only=True)
+    first_name = serializers.CharField(max_length=50, source='profile.first_name', allow_blank=True)
+    last_name = serializers.CharField(max_length=50, source='profile.last_name', allow_blank=True)
+    address_first = serializers.CharField(max_length=100, source='profile.address_first', allow_blank=True)
+    address_second = serializers.CharField(max_length=50, source='profile.address_second', allow_blank=True)
+    city = serializers.CharField(max_length=40, source='profile.city', allow_blank=True)
+    state = serializers.CharField(max_length=20, source='profile.state', allow_blank=True)
+    zip = serializers.CharField(max_length=10, source='profile.zip', allow_blank=True)
+    country = serializers.CharField(max_length=20, source='profile.country', allow_blank=True)
     links = serializers.SerializerMethodField()  # links to related resource
 
     class Meta:
         model = User
         fields = ('id', User.USERNAME_FIELD, 'full_name',
+                  'first_name', 'last_name', 'address_first', 'address_second',
+                  'city', 'state', 'zip', 'country',
                   'is_active', 'links',)
 
     # link Profile data with User
