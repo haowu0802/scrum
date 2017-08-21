@@ -1,6 +1,6 @@
 A scrum board mini-project for the exercise of HelloWorld
 ---------------------------------------------------------
-This project is for completing the coding assessment for HelloWorld
+
 
 A live version can be found here:
 ---------------------------------
