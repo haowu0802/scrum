@@ -1,4 +1,4 @@
-A scrum board mini-project for the exercise of HelloWorld
+A scrum board mini-project
 ---------------------------------------------------------
 
 
